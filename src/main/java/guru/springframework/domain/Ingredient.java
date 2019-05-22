@@ -1,6 +1,5 @@
 package guru.springframework.domain;
 
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
@@ -9,7 +8,6 @@ import java.math.BigDecimal;
 /**
  * Created by jt on 6/13/17.
  */
-@Data
 @EqualsAndHashCode(exclude = {"recipe"})
 @Entity
 public class Ingredient {
@@ -43,4 +41,47 @@ public class Ingredient {
     }
 
 
+    public Long getId() {
+        return this.id;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public BigDecimal getAmount() {
+        return this.amount;
+    }
+
+    public UnitOfMeasure getUom() {
+        return this.uom;
+    }
+
+    public Recipe getRecipe() {
+        return this.recipe;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public void setUom(UnitOfMeasure uom) {
+        this.uom = uom;
+    }
+
+    public void setRecipe(Recipe recipe) {
+        this.recipe = recipe;
+    }
+
+    public String toString() {
+        return "Ingredient(id=" + this.getId() + ", description=" + this.getDescription() + ", amount=" + this.getAmount() + ", uom=" + this.getUom()+ ")";
+    }
 }
