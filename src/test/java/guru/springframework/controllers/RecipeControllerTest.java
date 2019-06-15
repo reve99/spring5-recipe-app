@@ -40,7 +40,7 @@ public class RecipeControllerTest {
     }
 
     @Test
-    public void testGetRecipe() throws Exception {
+    public void testGetRecipe () throws Exception {
 
         Recipe recipe = new Recipe();
         recipe.setId(1L);
@@ -51,6 +51,7 @@ public class RecipeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("recipe/show"))
                 .andExpect(model().attributeExists("recipe"));
+
     }
 
     @Test
@@ -61,7 +62,8 @@ public class RecipeControllerTest {
         when(recipeService.findById(anyLong())).thenThrow(NotFoundException.class);
 
         mockMvc.perform(get("/recipe/1/show"))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("404error"));
     }
 
     @Test
