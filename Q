@@ -1,0 +1,1226 @@
+[1mdiff --git a/.circleci/config.yml b/.circleci/config.yml[m
+[1mdeleted file mode 100644[m
+[1mindex 7f756b5..0000000[m
+[1m--- a/.circleci/config.yml[m
+[1m+++ /dev/null[m
+[36m@@ -1,48 +0,0 @@[m
+[31m-# Java Maven CircleCI 2.0 configuration file[m
+[31m-#[m
+[31m-# Check https://circleci.com/docs/2.0/language-java/ for more details[m
+[31m-#[m
+[31m-version: 2[m
+[31m-jobs:[m
+[31m-  build:[m
+[31m-    docker:[m
+[31m-      # specify the version you desire here[m
+[31m-      - image: circleci/openjdk:8-jdk[m
+[31m-[m
+[31m-      # Specify service dependencies here if necessary[m
+[31m-      # CircleCI maintains a library of pre-built images[m
+[31m-      # documented at https://circleci.com/docs/2.0/circleci-images/[m
+[31m-      # - image: circleci/postgres:9.4[m
+[31m-[m
+[31m-    working_directory: ~/repo[m
+[31m-[m
+[31m-    environment:[m
+[31m-      # Customize the JVM maximum heap limit[m
+[31m-      MAVEN_OPTS: -Xmx3200m[m
+[31m-[m
+[31m-    steps:[m
+[31m-      - checkout[m
+[31m-[m
+[31m-      # Download and cache dependencies[m
+[31m-      - restore_cache:[m
+[31m-          keys:[m
+[31m-            - v1-dependencies-{‌{ checksum "pom.xml" }}[m
+[31m-            # fallback to using the latest cache if no exact match is found[m
+[31m-            - v1-dependencies-[m
+[31m-[m
+[31m-      - run: mvn dependency:go-offline[m
+[31m-[m
+[31m-      - save_cache:[m
+[31m-          paths:[m
+[31m-            - ~/.m2[m
+[31m-          key: v1-dependencies-{‌{ checksum "pom.xml" }}[m
+[31m-[m
+[31m-      # run tests! and gen code coverage[m
+[31m-      - run: mvn integration-test cobertura:cobertura[m
+[31m-[m
+[31m-      - store_test_results:[m
+[31m-          path: target/surefire-reports[m
+[31m-[m
+[31m-      - run:[m
+[31m-          name: Send to CodeCov[m
+[31m-          command: bash <(curl -s https://codecov.io/bash)[m
+\ No newline at end of file[m
+[1mdiff --git a/README.md b/README.md[m
+[1mindex 1a932d5..d31432c 100644[m
+[1m--- a/README.md[m
+[1m+++ b/README.md[m
+[36m@@ -1,2 +1 @@[m
+[31m-[![CircleCI](https://circleci.com/gh/reve99/sfg-pet-clinic.svg?style=svg)](https://circleci.com/gh/reve99/sfg-pet-clinic)[m
+ # Spring Boot Recipe Application[m
+[1mdiff --git a/pom.xml b/pom.xml[m
+[1mindex cacd5da..3028017 100644[m
+[1m--- a/pom.xml[m
+[1m+++ b/pom.xml[m
+[36m@@ -55,12 +55,7 @@[m
+ 		<dependency>[m
+ 			<groupId>org.webjars</groupId>[m
+ 			<artifactId>bootstrap</artifactId>[m
+[31m-			<version>4.3.1</version>[m
+[31m-		</dependency>[m
+[31m-		<dependency>[m
+[31m-			<groupId>org.webjars</groupId>[m
+[31m-			<artifactId>jquery</artifactId>[m
+[31m-			<version>3.4.1</version>[m
+[32m+[m			[32m<version>3.3.7-1</version>[m
+ 		</dependency>[m
+ 		<dependency>[m
+ 			<groupId>org.springframework.boot</groupId>[m
+[36m@@ -97,14 +92,6 @@[m
+ 					</execution>[m
+ 				</executions>[m
+ 			</plugin>[m
+[31m-			<plugin>[m
+[31m-				<groupId>org.apache.maven.plugins</groupId>[m
+[31m-				<artifactId>maven-surefire-plugin</artifactId>[m
+[31m-				<version>2.22.1</version>[m
+[31m-				<configuration>[m
+[31m-					<useSystemClassLoader>false</useSystemClassLoader>[m
+[31m-				</configuration>[m
+[31m-			</plugin>[m
+ 		</plugins>[m
+ 	</build>[m
+ [m
+[1mdiff --git a/src/main/java/guru/springframework/bootstrap/RecipeBootstrap.java b/src/main/java/guru/springframework/bootstrap/RecipeBootstrap.java[m
+[1mindex 08adecb..4046379 100644[m
+[1m--- a/src/main/java/guru/springframework/bootstrap/RecipeBootstrap.java[m
+[1m+++ b/src/main/java/guru/springframework/bootstrap/RecipeBootstrap.java[m
+[36m@@ -8,18 +8,23 @@[m [mimport lombok.extern.slf4j.Slf4j;[m
+ import org.springframework.context.ApplicationListener;[m
+ import org.springframework.context.event.ContextRefreshedEvent;[m
+ import org.springframework.stereotype.Component;[m
+[32m+[m[32mimport org.springframework.transaction.annotation.Transactional;[m
+ [m
+ import java.math.BigDecimal;[m
+ import java.util.ArrayList;[m
+ import java.util.List;[m
+ import java.util.Optional;[m
+[31m-@Component[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ @Slf4j[m
+[32m+[m[32m@Component[m
+ public class RecipeBootstrap implements ApplicationListener<ContextRefreshedEvent> {[m
+ [m
+[31m-    private CategoryRepository categoryRepository;[m
+[31m-    private RecipeRepository recipeRepository;[m
+[31m-    private UnitOfMeasureRepository unitOfMeasureRepository;[m
+[32m+[m[32m    private final CategoryRepository categoryRepository;[m
+[32m+[m[32m    private final RecipeRepository recipeRepository;[m
+[32m+[m[32m    private final UnitOfMeasureRepository unitOfMeasureRepository;[m
+ [m
+     public RecipeBootstrap(CategoryRepository categoryRepository, RecipeRepository recipeRepository, UnitOfMeasureRepository unitOfMeasureRepository) {[m
+         this.categoryRepository = categoryRepository;[m
+[36m@@ -28,17 +33,23 @@[m [mpublic class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven[m
+     }[m
+ [m
+     @Override[m
+[31m-    public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {[m
+[31m-        log.debug("saving bootstrap Data");[m
+[32m+[m[32m    @Transactional[m
+[32m+[m[32m    public void onApplicationEvent(ContextRefreshedEvent event) {[m
+         recipeRepository.saveAll(getRecipes());[m
+[32m+[m[32m        log.debug("Loading Bootstrap Data");[m
+     }[m
+[31m-    private List<Recipe> getRecipes(){[m
+[32m+[m
+[32m+[m[32m    private List<Recipe> getRecipes() {[m
+[32m+[m
+         List<Recipe> recipes = new ArrayList<>(2);[m
+ [m
+[32m+[m[32m        //get UOMs[m
+         Optional<UnitOfMeasure> eachUomOptional = unitOfMeasureRepository.findByDescription("Each");[m
+[32m+[m
+         if(!eachUomOptional.isPresent()){[m
+[31m-            throw new RuntimeException("Expected UOM is not fount");[m
+[32m+[m[32m            throw new RuntimeException("Expected UOM Not Found");[m
+         }[m
+[32m+[m
+         Optional<UnitOfMeasure> tableSpoonUomOptional = unitOfMeasureRepository.findByDescription("Tablespoon");[m
+ [m
+         if(!tableSpoonUomOptional.isPresent()){[m
+[36m@@ -69,13 +80,15 @@[m [mpublic class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven[m
+             throw new RuntimeException("Expected UOM Not Found");[m
+         }[m
+ [m
+[32m+[m[32m        //get optionals[m
+         UnitOfMeasure eachUom = eachUomOptional.get();[m
+         UnitOfMeasure tableSpoonUom = tableSpoonUomOptional.get();[m
+         UnitOfMeasure teapoonUom = tableSpoonUomOptional.get();[m
+         UnitOfMeasure dashUom = dashUomOptional.get();[m
+[31m-        UnitOfMeasure pintUom = pintUomOptional.get();[m
+[32m+[m[32m        UnitOfMeasure pintUom = dashUomOptional.get();[m
+         UnitOfMeasure cupsUom = cupsUomOptional.get();[m
+ [m
+[32m+[m[32m        //get Categories[m
+         Optional<Category> americanCategoryOptional = categoryRepository.findByDescription("American");[m
+ [m
+         if(!americanCategoryOptional.isPresent()){[m
+[36m@@ -91,11 +104,12 @@[m [mpublic class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven[m
+         Category americanCategory = americanCategoryOptional.get();[m
+         Category mexicanCategory = mexicanCategoryOptional.get();[m
+ [m
+[32m+[m[32m        //Yummy Guac[m
+         Recipe guacRecipe = new Recipe();[m
+         guacRecipe.setDescription("Perfect Guacamole");[m
+         guacRecipe.setPrepTime(10);[m
+         guacRecipe.setCookTime(0);[m
+[31m-        guacRecipe.setDiffeculty(Difficulty.EASY);[m
+[32m+[m[32m        guacRecipe.setDifficulty(Difficulty.EASY);[m
+         guacRecipe.setDirections("1 Cut avocado, remove flesh: Cut the avocados in half. Remove seed. Score the inside of the avocado with a blunt knife and scoop out the flesh with a spoon" +[m
+                 "\n" +[m
+                 "2 Mash with a fork: Using a fork, roughly mash the avocado. (Don't overdo it! The guacamole should be a little chunky.)" +[m
+[36m@@ -117,21 +131,26 @@[m [mpublic class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven[m
+                 "\n" +[m
+                 "\n" +[m
+                 "Read more: http://www.simplyrecipes.com/recipes/perfect_guacamole/#ixzz4jvoun5ws");[m
+[31m-        //guacNotes.setRecipe(guacRecipe);[m
+[32m+[m
+         guacRecipe.setNotes(guacNotes);[m
+ [m
+[31m-        guacRecipe.addIngredient(new Ingredient("ripe avocados", new BigDecimal(2), eachUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("Kosher salt", new BigDecimal(".5"), teapoonUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("fresh lime juice or lemon juice", new BigDecimal(2), tableSpoonUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("minced red onion or thinly sliced green onion", new BigDecimal(2), tableSpoonUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("serrano chiles, stems and seeds removed, minced", new BigDecimal(2), eachUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("Cilantro", new BigDecimal(2), tableSpoonUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("freshly grated black pepper", new BigDecimal(2), dashUom,guacRecipe));[m
+[31m-        guacRecipe.addIngredient(new Ingredient("ripe tomato, seeds and pulp removed, chopped", new BigDecimal(".5"), eachUom,guacRecipe));[m
+[32m+[m[32m        //very redundent - could add helper method, and make this simpler[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("ripe avocados", new BigDecimal(2), eachUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("Kosher salt", new BigDecimal(".5"), teapoonUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("fresh lime juice or lemon juice", new BigDecimal(2), tableSpoonUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("minced red onion or thinly sliced green onion", new BigDecimal(2), tableSpoonUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("serrano chiles, stems and seeds removed, minced", new BigDecimal(2), eachUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("Cilantro", new BigDecimal(2), tableSpoonUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("freshly grated black pepper", new BigDecimal(2), dashUom));[m
+[32m+[m[32m        guacRecipe.addIngredient(new Ingredient("ripe tomato, seeds and pulp removed, chopped", new BigDecimal(".5"), eachUom));[m
+ [m
+         guacRecipe.getCategories().add(americanCategory);[m
+         guacRecipe.getCategories().add(mexicanCategory);[m
+ [m
+[32m+[m[32m        guacRecipe.setUrl("http://www.simplyrecipes.com/recipes/perfect_guacamole/");[m
+[32m+[m[32m        guacRecipe.setServings(4);[m
+[32m+[m[32m        guacRecipe.setSource("Simply Recipes");[m
+[32m+[m
+         //add to return list[m
+         recipes.add(guacRecipe);[m
+ [m
+[36m@@ -140,7 +159,7 @@[m [mpublic class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven[m
+         tacosRecipe.setDescription("Spicy Grilled Chicken Taco");[m
+         tacosRecipe.setCookTime(9);[m
+         tacosRecipe.setPrepTime(20);[m
+[31m-        tacosRecipe.setDiffeculty(Difficulty.MODERATE);[m
+[32m+[m[32m        tacosRecipe.setDifficulty(Difficulty.MODERATE);[m
+ [m
+         tacosRecipe.setDirections("1 Prepare a gas or charcoal grill for medium-high, direct heat.\n" +[m
+                 "2 Make the marinade and coat the chicken: In a large bowl, stir together the chili powder, oregano, cumin, sugar, salt, garlic and orange zest. Stir in the orange juice and olive oil to make a loose paste. Add the chicken to the bowl and toss to coat all over.\n" +[m
+[36m@@ -164,38 +183,37 @@[m [mpublic class RecipeBootstrap implements ApplicationListener<ContextRefreshedEven[m
+                 "\n" +[m
+                 "\n" +[m
+                 "Read more: http://www.simplyrecipes.com/recipes/spicy_grilled_chicken_tacos/#ixzz4jvu7Q0MJ");[m
+[31m-        //tacoNotes.setRecipe(tacosRecipe);[m
+[31m-        tacosRecipe.setNotes(tacoNotes);[m
+ [m
+[32m+[m[32m        tacosRecipe.setNotes(tacoNotes);[m
+ [m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Dried Oregano", new BigDecimal(1), teapoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Ancho Chili Powder", new BigDecimal(2), tableSpoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Dried Cumin", new BigDecimal(1), teapoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Sugar", new BigDecimal(1), teapoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Salt", new BigDecimal(".5"), teapoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Clove of Garlic, Choppedr", new BigDecimal(1), eachUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("finely grated orange zestr", new BigDecimal(1), tableSpoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("fresh-squeezed orange juice", new BigDecimal(3), tableSpoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Olive Oil", new BigDecimal(2), tableSpoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("boneless chicken thighs", new BigDecimal(4), tableSpoonUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("small corn tortillasr", new BigDecimal(8), eachUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("packed baby arugula", new BigDecimal(3), cupsUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("medium ripe avocados, slic", new BigDecimal(2), eachUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("radishes, thinly sliced", new BigDecimal(4), eachUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("cherry tomatoes, halved", new BigDecimal(".5"), pintUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("red onion, thinly sliced", new BigDecimal(".25"), eachUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("Roughly chopped cilantro", new BigDecimal(4), eachUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("cup sour cream thinned with 1/4 cup milk", new BigDecimal(4), cupsUom, tacosRecipe));[m
+[31m-        tacosRecipe.addIngredient(new Ingredient("lime, cut into wedges", new BigDecimal(4), eachUom, tacosRecipe));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Ancho Chili Powder", new BigDecimal(2), tableSpoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Dried Oregano", new BigDecimal(1), teapoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Dried Cumin", new BigDecimal(1), teapoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Sugar", new BigDecimal(1), teapoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Salt", new BigDecimal(".5"), teapoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Clove of Garlic, Choppedr", new BigDecimal(1), eachUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("finely grated orange zestr", new BigDecimal(1), tableSpoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("fresh-squeezed orange juice", new BigDecimal(3), tableSpoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Olive Oil", new BigDecimal(2), tableSpoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("boneless chicken thighs", new BigDecimal(4), tableSpoonUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("small corn tortillasr", new BigDecimal(8), eachUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("packed baby arugula", new BigDecimal(3), cupsUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("medium ripe avocados, slic", new BigDecimal(2), eachUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("radishes, thinly sliced", new BigDecimal(4), eachUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("cherry tomatoes, halved", new BigDecimal(".5"), pintUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("red onion, thinly sliced", new BigDecimal(".25"), eachUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("Roughly chopped cilantro", new BigDecimal(4), eachUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("cup sour cream thinned with 1/4 cup milk", new BigDecimal(4), cupsUom));[m
+[32m+[m[32m        tacosRecipe.addIngredient(new Ingredient("lime, cut into wedges", new BigDecimal(4), eachUom));[m
+ [m
+         tacosRecipe.getCategories().add(americanCategory);[m
+         tacosRecipe.getCategories().add(mexicanCategory);[m
+ [m
+[32m+[m[32m        tacosRecipe.setUrl("http://www.simplyrecipes.com/recipes/spicy_grilled_chicken_tacos/");[m
+[32m+[m[32m        tacosRecipe.setServings(4);[m
+[32m+[m[32m        tacosRecipe.setSource("Simply Recipes");[m
+[32m+[m
+         recipes.add(tacosRecipe);[m
+         return recipes;[m
+[31m-[m
+[31m-[m
+     }[m
+[31m-[m
+[31m-[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/controllers/IndexController.java b/src/main/java/guru/springframework/controllers/IndexController.java[m
+[1mindex da02300..39c762b 100644[m
+[1m--- a/src/main/java/guru/springframework/controllers/IndexController.java[m
+[1m+++ b/src/main/java/guru/springframework/controllers/IndexController.java[m
+[36m@@ -1,17 +1,11 @@[m
+ package guru.springframework.controllers;[m
+ [m
+[31m-import guru.springframework.domain.Category;[m
+[31m-import guru.springframework.domain.UnitOfMeasure;[m
+[31m-import guru.springframework.repositories.CategoryRepository;[m
+[31m-import guru.springframework.repositories.UnitOfMeasureRepository;[m
+ import guru.springframework.services.RecipeService;[m
+ import lombok.extern.slf4j.Slf4j;[m
+ import org.springframework.stereotype.Controller;[m
+ import org.springframework.ui.Model;[m
+ import org.springframework.web.bind.annotation.RequestMapping;[m
+ [m
+[31m-import java.util.Optional;[m
+[31m-[m
+ /**[m
+  * Created by jt on 6/1/17.[m
+  */[m
+[36m@@ -26,9 +20,11 @@[m [mpublic class IndexController {[m
+     }[m
+ [m
+     @RequestMapping({"", "/", "/index"})[m
+[31m-    public String getIndexPage(Model model){[m
+[31m-        log.debug("inside Controller");[m
+[32m+[m[32m    public String getIndexPage(Model model) {[m
+[32m+[m[32m        log.debug("Getting Index page");[m
+[32m+[m
+         model.addAttribute("recipes", recipeService.getRecipes());[m
+[32m+[m
+         return "index";[m
+     }[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/controllers/RecipeController.java b/src/main/java/guru/springframework/controllers/RecipeController.java[m
+[1mindex e89340e..b4eab7e 100644[m
+[1m--- a/src/main/java/guru/springframework/controllers/RecipeController.java[m
+[1m+++ b/src/main/java/guru/springframework/controllers/RecipeController.java[m
+[36m@@ -6,16 +6,23 @@[m [mimport org.springframework.ui.Model;[m
+ import org.springframework.web.bind.annotation.PathVariable;[m
+ import org.springframework.web.bind.annotation.RequestMapping;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/19/17.[m
+[32m+[m[32m */[m
+ @Controller[m
+ public class RecipeController {[m
+[32m+[m
+     private final RecipeService recipeService;[m
+ [m
+     public RecipeController(RecipeService recipeService) {[m
+         this.recipeService = recipeService;[m
+     }[m
+[32m+[m
+     @RequestMapping("/recipe/show/{id}")[m
+     public String showById(@PathVariable String id, Model model){[m
+[31m-        model.addAttribute("recipe", recipeService.findById(new Long(id)));[m
+[32m+[m
+[32m+[m[32m        model.addAttribute("recipe", recipeService.findById(Long.valueOf(id)));[m
+[32m+[m
+         return "recipe/show";[m
+     }[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/domain/Category.java b/src/main/java/guru/springframework/domain/Category.java[m
+[1mindex db20d24..1af6376 100644[m
+[1m--- a/src/main/java/guru/springframework/domain/Category.java[m
+[1m+++ b/src/main/java/guru/springframework/domain/Category.java[m
+[36m@@ -5,16 +5,21 @@[m [mimport lombok.EqualsAndHashCode;[m
+ [m
+ import javax.persistence.*;[m
+ import java.util.Set;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ @Data[m
+[31m-@EqualsAndHashCode(exclude = "recipes")[m
+[32m+[m[32m@EqualsAndHashCode(exclude = {"recipes"})[m
+ @Entity[m
+ public class Category {[m
+[32m+[m
+     @Id[m
+     @GeneratedValue(strategy = GenerationType.IDENTITY)[m
+     private Long id;[m
+     private String description;[m
+[32m+[m
+     @ManyToMany(mappedBy = "categories")[m
+     private Set<Recipe> recipes;[m
+ [m
+[31m-[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/domain/Difficulty.java b/src/main/java/guru/springframework/domain/Difficulty.java[m
+[1mindex 13e606e..b9dfa76 100644[m
+[1m--- a/src/main/java/guru/springframework/domain/Difficulty.java[m
+[1m+++ b/src/main/java/guru/springframework/domain/Difficulty.java[m
+[36m@@ -1,5 +1,9 @@[m
+ package guru.springframework.domain;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ public enum Difficulty {[m
+[31m-    EASY, MODERATE, HARD[m
+[32m+[m
+[32m+[m[32m    EASY, MODERATE, KIND_OF_HARD, HARD[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/domain/Ingredient.java b/src/main/java/guru/springframework/domain/Ingredient.java[m
+[1mindex 562bbc3..dddb3eb 100644[m
+[1m--- a/src/main/java/guru/springframework/domain/Ingredient.java[m
+[1m+++ b/src/main/java/guru/springframework/domain/Ingredient.java[m
+[36m@@ -5,27 +5,41 @@[m [mimport lombok.EqualsAndHashCode;[m
+ [m
+ import javax.persistence.*;[m
+ import java.math.BigDecimal;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ @Data[m
+ @EqualsAndHashCode(exclude = {"recipe"})[m
+ @Entity[m
+ public class Ingredient {[m
+[32m+[m
+     @Id[m
+     @GeneratedValue(strategy = GenerationType.IDENTITY)[m
+     private Long id;[m
+     private String description;[m
+     private BigDecimal amount;[m
+[32m+[m
+     @OneToOne(fetch = FetchType.EAGER)[m
+     private UnitOfMeasure uom;[m
+[32m+[m
+     @ManyToOne[m
+     private Recipe recipe;[m
+ [m
+[32m+[m[32m    public Ingredient() {[m
+[32m+[m[32m    }[m
+[32m+[m
+[32m+[m[32m    public Ingredient(String description, BigDecimal amount, UnitOfMeasure uom) {[m
+[32m+[m[32m        this.description = description;[m
+[32m+[m[32m        this.amount = amount;[m
+[32m+[m[32m        this.uom = uom;[m
+[32m+[m[32m    }[m
+[32m+[m
+     public Ingredient(String description, BigDecimal amount, UnitOfMeasure uom, Recipe recipe) {[m
+         this.description = description;[m
+         this.amount = amount;[m
+         this.uom = uom;[m
+         this.recipe = recipe;[m
+[31m-[m
+     }[m
+ [m
+[31m-[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/domain/Notes.java b/src/main/java/guru/springframework/domain/Notes.java[m
+[1mindex 5a1ff46..3a1dd57 100644[m
+[1m--- a/src/main/java/guru/springframework/domain/Notes.java[m
+[1m+++ b/src/main/java/guru/springframework/domain/Notes.java[m
+[36m@@ -1,19 +1,26 @@[m
+ package guru.springframework.domain;[m
+ [m
+[31m-import lombok.*;[m
+[32m+[m[32mimport lombok.Data;[m
+[32m+[m[32mimport lombok.EqualsAndHashCode;[m
+ [m
+ import javax.persistence.*;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ @Data[m
+[32m+[m[32m@EqualsAndHashCode(exclude = {"recipe"})[m
+ @Entity[m
+ public class Notes {[m
+[32m+[m
+     @Id[m
+     @GeneratedValue(strategy = GenerationType.IDENTITY)[m
+     private Long id;[m
+[32m+[m
+     @OneToOne[m
+     private Recipe recipe;[m
+[32m+[m
+     @Lob[m
+     private String recipeNotes;[m
+ [m
+[31m-[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/domain/Recipe.java b/src/main/java/guru/springframework/domain/Recipe.java[m
+[1mindex 3cbd5db..f311fdc 100644[m
+[1m--- a/src/main/java/guru/springframework/domain/Recipe.java[m
+[1m+++ b/src/main/java/guru/springframework/domain/Recipe.java[m
+[36m@@ -1,144 +1,58 @@[m
+ package guru.springframework.domain;[m
+ [m
+[32m+[m[32mimport lombok.Data;[m
+[32m+[m
+ import javax.persistence.*;[m
+ import java.util.HashSet;[m
+ import java.util.Set;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+[32m+[m[32m@Data[m
+ @Entity[m
+ public class Recipe {[m
+ [m
+     @Id[m
+     @GeneratedValue(strategy = GenerationType.IDENTITY)[m
+     private Long id;[m
+[32m+[m
+     private String description;[m
+     private Integer prepTime;[m
+     private Integer cookTime;[m
+     private Integer servings;[m
+     private String source;[m
+     private String url;[m
+[32m+[m
+     @Lob[m
+     private String directions;[m
+[31m-    @Enumerated(value = EnumType.STRING)[m
+[31m-    private Difficulty diffeculty;[m
+[32m+[m
+     @OneToMany(cascade = CascadeType.ALL, mappedBy = "recipe")[m
+     private Set<Ingredient> ingredients = new HashSet<>();[m
+[32m+[m
+     @Lob[m
+     private Byte[] image;[m
+[32m+[m
+[32m+[m[32m    @Enumerated(value = EnumType.STRING)[m
+[32m+[m[32m    private Difficulty difficulty;[m
+[32m+[m
+     @OneToOne(cascade = CascadeType.ALL)[m
+     private Notes notes;[m
+[32m+[m
+     @ManyToMany[m
+[31m-    @JoinTable(name="recipe_category",[m
+[31m-            joinColumns = @JoinColumn(name = "recipe_id"),[m
+[31m-            inverseJoinColumns = @JoinColumn(name= "category_id"))[m
+[32m+[m[32m    @JoinTable(name = "recipe_category",[m
+[32m+[m[32m        joinColumns = @JoinColumn(name = "recipe_id"),[m
+[32m+[m[32m            inverseJoinColumns = @JoinColumn(name = "category_id"))[m
+     private Set<Category> categories = new HashSet<>();[m
+ [m
+[31m-    public Long getId() {[m
+[31m-        return id;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setId(Long id) {[m
+[31m-        this.id = id;[m
+[31m-    }[m
+[31m-[m
+[31m-    public String getDescription() {[m
+[31m-        return description;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setDescription(String description) {[m
+[31m-        this.description = description;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Integer getPrepTime() {[m
+[31m-        return prepTime;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setPrepTime(Integer prepTime) {[m
+[31m-        this.prepTime = prepTime;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Integer getCookTime() {[m
+[31m-        return cookTime;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setCookTime(Integer cookTime) {[m
+[31m-        this.cookTime = cookTime;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Integer getServings() {[m
+[31m-        return servings;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setServings(Integer servings) {[m
+[31m-        this.servings = servings;[m
+[31m-    }[m
+[31m-[m
+[31m-    public String getSource() {[m
+[31m-        return source;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setSource(String source) {[m
+[31m-        this.source = source;[m
+[31m-    }[m
+[31m-[m
+[31m-    public String getUrl() {[m
+[31m-        return url;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setUrl(String url) {[m
+[31m-        this.url = url;[m
+[31m-    }[m
+[31m-[m
+[31m-    public String getDirections() {[m
+[31m-        return directions;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setDirections(String directions) {[m
+[31m-        this.directions = directions;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Set<Ingredient> getIngredients() {[m
+[31m-        return ingredients;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setIngredients(Set<Ingredient> ingredients) {[m
+[31m-        this.ingredients = ingredients;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Byte[] getImage() {[m
+[31m-        return image;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setImage(Byte[] image) {[m
+[31m-        this.image = image;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Notes getNotes() {[m
+[31m-        return notes;[m
+[31m-    }[m
+[31m-[m
+     public void setNotes(Notes notes) {[m
+         this.notes = notes;[m
+         notes.setRecipe(this);[m
+     }[m
+[32m+[m
+     public Recipe addIngredient(Ingredient ingredient){[m
+         ingredient.setRecipe(this);[m
+         this.ingredients.add(ingredient);[m
+         return this;[m
+     }[m
+[31m-[m
+[31m-    public Difficulty getDiffeculty() {[m
+[31m-        return diffeculty;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setDiffeculty(Difficulty diffeculty) {[m
+[31m-        this.diffeculty = diffeculty;[m
+[31m-    }[m
+[31m-[m
+[31m-    public Set<Category> getCategories() {[m
+[31m-        return categories;[m
+[31m-    }[m
+[31m-[m
+[31m-    public void setCategories(Set<Category> categories) {[m
+[31m-        this.categories = categories;[m
+[31m-    }[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/domain/UnitOfMeasure.java b/src/main/java/guru/springframework/domain/UnitOfMeasure.java[m
+[1mindex 380a7ce..9cf0e98 100644[m
+[1m--- a/src/main/java/guru/springframework/domain/UnitOfMeasure.java[m
+[1m+++ b/src/main/java/guru/springframework/domain/UnitOfMeasure.java[m
+[36m@@ -6,12 +6,16 @@[m [mimport javax.persistence.Entity;[m
+ import javax.persistence.GeneratedValue;[m
+ import javax.persistence.GenerationType;[m
+ import javax.persistence.Id;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ @Data[m
+ @Entity[m
+ public class UnitOfMeasure {[m
+[32m+[m
+     @Id[m
+     @GeneratedValue(strategy = GenerationType.IDENTITY)[m
+     private Long id;[m
+     private String description;[m
+[31m-[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/repositories/CategoryRepository.java b/src/main/java/guru/springframework/repositories/CategoryRepository.java[m
+[1mindex 2fca6df..d1ef9da 100644[m
+[1m--- a/src/main/java/guru/springframework/repositories/CategoryRepository.java[m
+[1m+++ b/src/main/java/guru/springframework/repositories/CategoryRepository.java[m
+[36m@@ -5,6 +5,9 @@[m [mimport org.springframework.data.repository.CrudRepository;[m
+ [m
+ import java.util.Optional;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ public interface CategoryRepository extends CrudRepository<Category, Long> {[m
+ [m
+     Optional<Category> findByDescription(String description);[m
+[1mdiff --git a/src/main/java/guru/springframework/repositories/RecipeRepository.java b/src/main/java/guru/springframework/repositories/RecipeRepository.java[m
+[1mindex 6ad1fec..faba1bd 100644[m
+[1m--- a/src/main/java/guru/springframework/repositories/RecipeRepository.java[m
+[1m+++ b/src/main/java/guru/springframework/repositories/RecipeRepository.java[m
+[36m@@ -3,5 +3,8 @@[m [mpackage guru.springframework.repositories;[m
+ import guru.springframework.domain.Recipe;[m
+ import org.springframework.data.repository.CrudRepository;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ public interface RecipeRepository extends CrudRepository<Recipe, Long> {[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/repositories/UnitOfMeasureRepository.java b/src/main/java/guru/springframework/repositories/UnitOfMeasureRepository.java[m
+[1mindex 76ca864..eec0001 100644[m
+[1m--- a/src/main/java/guru/springframework/repositories/UnitOfMeasureRepository.java[m
+[1m+++ b/src/main/java/guru/springframework/repositories/UnitOfMeasureRepository.java[m
+[36m@@ -5,6 +5,9 @@[m [mimport org.springframework.data.repository.CrudRepository;[m
+ [m
+ import java.util.Optional;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ public interface UnitOfMeasureRepository extends CrudRepository<UnitOfMeasure, Long> {[m
+ [m
+     Optional<UnitOfMeasure> findByDescription(String description);[m
+[1mdiff --git a/src/main/java/guru/springframework/services/RecipeService.java b/src/main/java/guru/springframework/services/RecipeService.java[m
+[1mindex 2eabcdc..4432ee7 100644[m
+[1m--- a/src/main/java/guru/springframework/services/RecipeService.java[m
+[1m+++ b/src/main/java/guru/springframework/services/RecipeService.java[m
+[36m@@ -4,7 +4,12 @@[m [mimport guru.springframework.domain.Recipe;[m
+ [m
+ import java.util.Set;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+ public interface RecipeService {[m
+[31m-    Set<Recipe>  getRecipes();[m
+[32m+[m
+[32m+[m[32m    Set<Recipe> getRecipes();[m
+[32m+[m
+     Recipe findById(Long l);[m
+ }[m
+[1mdiff --git a/src/main/java/guru/springframework/services/RecipeServiceImpl.java b/src/main/java/guru/springframework/services/RecipeServiceImpl.java[m
+[1mindex 893594f..62a6b30 100644[m
+[1m--- a/src/main/java/guru/springframework/services/RecipeServiceImpl.java[m
+[1m+++ b/src/main/java/guru/springframework/services/RecipeServiceImpl.java[m
+[36m@@ -2,13 +2,20 @@[m [mpackage guru.springframework.services;[m
+ [m
+ import guru.springframework.domain.Recipe;[m
+ import guru.springframework.repositories.RecipeRepository;[m
+[32m+[m[32mimport lombok.extern.slf4j.Slf4j;[m
+ import org.springframework.stereotype.Service;[m
+ [m
+ import java.util.HashSet;[m
+ import java.util.Optional;[m
+ import java.util.Set;[m
+[32m+[m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/13/17.[m
+[32m+[m[32m */[m
+[32m+[m[32m@Slf4j[m
+ @Service[m
+ public class RecipeServiceImpl implements RecipeService {[m
+[32m+[m
+     private final RecipeRepository recipeRepository;[m
+ [m
+     public RecipeServiceImpl(RecipeRepository recipeRepository) {[m
+[36m@@ -17,17 +24,22 @@[m [mpublic class RecipeServiceImpl implements RecipeService {[m
+ [m
+     @Override[m
+     public Set<Recipe> getRecipes() {[m
+[32m+[m[32m        log.debug("I'm in the service");[m
+[32m+[m
+         Set<Recipe> recipeSet = new HashSet<>();[m
+         recipeRepository.findAll().iterator().forEachRemaining(recipeSet::add);[m
+         return recipeSet;[m
+     }[m
+ [m
+     @Override[m
+[31m-    public  Recipe findById(Long l){[m
+[32m+[m[32m    public Recipe findById(Long l) {[m
+[32m+[m
+         Optional<Recipe> recipeOptional = recipeRepository.findById(l);[m
+[31m-        if(!recipeOptional.isPresent()){[m
+[31m-            throw new RuntimeException("Recipe not found");[m
+[32m+[m
+[32m+[m[32m        if (!recipeOptional.isPresent()) {[m
+[32m+[m[32m            throw new RuntimeException("Recipe Not Found!");[m
+         }[m
+[32m+[m
+         return recipeOptional.get();[m
+     }[m
+ }[m
+[1mdiff --git a/src/main/resources/templates/index.html b/src/main/resources/templates/index.html[m
+[1mindex b5eebb5..28b81ce 100644[m
+[1m--- a/src/main/resources/templates/index.html[m
+[1m+++ b/src/main/resources/templates/index.html[m
+[36m@@ -3,15 +3,18 @@[m
+ <head>[m
+     <meta charset="UTF-8"/>[m
+     <title>Recipe Home</title>[m
+[31m-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"[m
+[31m-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"[m
+[31m-          crossorigin="anonymous"[m
+[31m-          th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">[m
+[31m-    <script src="/webjars/jquery/3.4.1/jquery.min.js"></script>[m
+[31m-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"[m
+[31m-            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"[m
+[31m-            crossorigin="anonymous"[m
+[31m-            th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>[m
+[32m+[m
+[32m+[m[32m    <!-- Latest compiled and minified CSS -->[m
+[32m+[m[32m    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"[m
+[32m+[m[32m          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"[m
+[32m+[m[32m          th:href="@{/webjars/bootstrap/3.3.7-1/css/bootstrap.min.css}">[m
+[32m+[m
+[32m+[m[32m    <script src="/webjars/jquery/1.11.1/jquery.min.js"></script>[m
+[32m+[m
+[32m+[m[32m    <!-- Latest compiled and minified JavaScript -->[m
+[32m+[m[32m    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"[m
+[32m+[m[32m            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"[m
+[32m+[m[32m            crossorigin="anonymous" th:src="@{/webjars/bootstrap/3.3.7-1/js/bootstrap.min.js}"></script>[m
+ </head>[m
+ <body>[m
+ [m
+[1mdiff --git a/src/main/resources/templates/recipe/show.html b/src/main/resources/templates/recipe/show.html[m
+[1mindex 45b0b98..ef6e5b5 100644[m
+[1m--- a/src/main/resources/templates/recipe/show.html[m
+[1m+++ b/src/main/resources/templates/recipe/show.html[m
+[36m@@ -5,24 +5,25 @@[m
+     <title>Show Recipe</title>[m
+ [m
+     <!-- Latest compiled and minified CSS -->[m
+[31m-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"[m
+[31m-          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"[m
+[31m-          crossorigin="anonymous"[m
+[31m-          th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">[m
+[31m-    <script src="/webjars/jquery/3.4.1/jquery.min.js"></script>[m
+[31m-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"[m
+[31m-            integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"[m
+[31m-            crossorigin="anonymous"[m
+[31m-            th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>[m
+[32m+[m[32m    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"[m
+[32m+[m[32m          integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"[m
+[32m+[m[32m          th:href="@{/webjars/bootstrap/3.3.7-1/css/bootstrap.min.css}">[m
+[32m+[m
+[32m+[m[32m    <script src="/webjars/jquery/1.11.1/jquery.min.js"></script>[m
+[32m+[m
+[32m+[m[32m    <!-- Latest compiled and minified JavaScript -->[m
+[32m+[m[32m    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"[m
+[32m+[m[32m            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"[m
+[32m+[m[32m            crossorigin="anonymous" th:src="@{/webjars/bootstrap/3.3.7-1/js/bootstrap.min.js}"></script>[m
+ </head>[m
+ <body>[m
+[32m+[m[32m<!--/*@thymesVar id="recipe" type="guru.springframework.domain.Recipe"*/-->[m
+ <div class="container-fluid" style="margin-top: 20px">[m
+     <div class="row">[m
+         <div class="col-md-6 col-md-offset-3">[m
+             <div class="pannel-group">[m
+                 <div class="panel panel-primary">[m
+                     <div class="panel-heading">[m
+[31m-                        <!--/*@thymesVar id="recipe" type="guru.springframework.domain.Recipe"*/-->[m
+                         <h1 class="panel-title" th:text="${recipe.description}">Recipe Description Here!</h1>[m
+                     </div>[m
+                     <div class="panel-body">[m
+[36m@@ -43,13 +44,13 @@[m
+                                 <h5>Prep Time:</h5>[m
+                             </div>[m
+                             <div class="col-md-3">[m
+[31m-                                <p th:text="${(recipe.prepTime) + ' Min'}">30 min</p>[m
+[32m+[m[32m                                <p th:text="${(recipe.prepTime) +  '  Min'}">30 min</p>[m
+                             </div>[m
+                             <div class="col-md-3">[m
+                                 <h5>Difficulty:</h5>[m
+                             </div>[m
+                             <div class="col-md-3">[m
+[31m-                                <p th:text="${recipe.diffeculty}">Easy</p>[m
+[32m+[m[32m                                <p th:text="${recipe.difficulty}">Easy</p>[m
+                             </div>[m
+                         </div>[m
+                         <div class="row">[m
+[36m@@ -57,7 +58,7 @@[m
+                                 <h5>Cooktime:</h5>[m
+                             </div>[m
+                             <div class="col-md-3">[m
+[31m-                                <p th:text="${recipe.cookTime}">30 min</p>[m
+[32m+[m[32m                                <p th:text="${(recipe.cookTime  +  '  Min')}">30 min</p>[m
+                             </div>[m
+                             <div class="col-md-3">[m
+                                 <h5>Servings:</h5>[m
+[36m@@ -77,7 +78,7 @@[m
+                                 <h5>URL:</h5>[m
+                             </div>[m
+                             <div class="col-md-3">[m
+[31m-                                <p th:text="${recipe.url}">http://www.example.com</p>[m
+[32m+[m[32m                                <p><a href="#" th:href="${recipe.url}" >View Original</a></p>[m
+                             </div>[m
+                         </div>[m
+                     </div>[m
+[36m@@ -92,10 +93,10 @@[m
+                                 <ul>[m
+                                     <li th:remove="all">1 Cup of milk</li>[m
+                                     <li th:remove="all">1 Teaspoon of chocolate</li>[m
+[31m-<!--                                    <li th:each="ingredient : ${recipe.ingredients}"-->[m
+[31m-<!--                                        th:text="${(ingredient.getAmount() +-->[m
+[31m-<!--                                        ' ' + ingredient.uom.getDescription() +-->[m
+[31m-<!--                                        ' - ' + ingredient.getDescription())}">1 Teaspoon of Sugar</li>-->[m
+[32m+[m[32m                                    <li th:each="ingredient : ${recipe.ingredients}"[m
+[32m+[m[32m                                        th:text="${(ingredient.getAmount() +[m
+[32m+[m[32m                                        ' ' + ingredient.uom.getDescription() +[m
+[32m+[m[32m                                        ' - ' + ingredient.getDescription())}">1 Teaspoon of Sugar</li>[m
+                                 </ul>[m
+                             </div>[m
+                         </div>[m
+[36m@@ -120,7 +121,7 @@[m
+                     <div class="panel-body">[m
+                         <div class="row">[m
+                             <div class="col-md-12">[m
+[31m-                                <p th:text="${recipe.notes}">Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum.</p>[m
+[32m+[m[32m                                <p th:text="${recipe.notes.recipeNotes}">Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem. Nulla consequat massa quis enim. Donec pede justo, fringilla vel, aliquet nec, vulputate eget, arcu. In enim justo, rhoncus ut, imperdiet a, venenatis vitae, justo. Nullam dictum felis eu pede mollis pretium. Integer tincidunt. Cras dapibus. Vivamus elementum semper nisi. Aenean vulputate eleifend tellus. Aenean leo ligula, porttitor eu, consequat vitae, eleifend ac, enim. Aliquam lorem ante, dapibus in, viverra quis, feugiat a, tellus. Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies nisi. Nam eget dui. Etiam rhoncus. Maecenas tempus, tellus eget condimentum rhoncus, sem quam semper libero, sit amet adipiscing sem neque sed ipsum.</p>[m
+                             </div>[m
+                         </div>[m
+                     </div>[m
+[1mdiff --git a/src/test/java/guru/springframework/controllers/IndexControllerTest.java b/src/test/java/guru/springframework/controllers/IndexControllerTest.java[m
+[1mindex 854d90f..8f31456 100644[m
+[1m--- a/src/test/java/guru/springframework/controllers/IndexControllerTest.java[m
+[1m+++ b/src/test/java/guru/springframework/controllers/IndexControllerTest.java[m
+[36m@@ -1,61 +1,74 @@[m
+ package guru.springframework.controllers;[m
+ [m
+ import guru.springframework.domain.Recipe;[m
+[31m-import guru.springframework.services.RecipeServiceImpl;[m
+[32m+[m[32mimport guru.springframework.services.RecipeService;[m
+ import org.junit.Before;[m
+ import org.junit.Test;[m
+ import org.mockito.ArgumentCaptor;[m
+ import org.mockito.Mock;[m
+ import org.mockito.MockitoAnnotations;[m
+ import org.springframework.test.web.servlet.MockMvc;[m
+[31m-import org.springframework.test.web.servlet.MockMvcBuilder;[m
+ import org.springframework.test.web.servlet.setup.MockMvcBuilders;[m
+ import org.springframework.ui.Model;[m
+ [m
+ import java.util.HashSet;[m
+ import java.util.Set;[m
+ [m
+[31m-import static org.junit.Assert.*;[m
+[31m-import static org.mockito.ArgumentMatchers.anySet;[m
+[31m-import static org.mockito.ArgumentMatchers.eq;[m
+[32m+[m[32mimport static org.junit.Assert.assertEquals;[m
+ import static org.mockito.Mockito.*;[m
+ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;[m
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;[m
+ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/17/17.[m
+[32m+[m[32m */[m
+ public class IndexControllerTest {[m
+[31m-    IndexController indexController;[m
+[32m+[m
+     @Mock[m
+[31m-    RecipeServiceImpl recipeService;[m
+[32m+[m[32m    RecipeService recipeService;[m
+[32m+[m
+     @Mock[m
+     Model model;[m
+ [m
+[32m+[m[32m    IndexController controller;[m
+[32m+[m
+     @Before[m
+     public void setUp() throws Exception {[m
+         MockitoAnnotations.initMocks(this);[m
+[31m-        indexController = new IndexController(recipeService);[m
+[32m+[m
+[32m+[m[32m        controller = new IndexController(recipeService);[m
+     }[m
+ [m
+     @Test[m
+[31m-    public void testMochMVC() throws Exception {[m
+[31m-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(indexController).build();[m
+[32m+[m[32m    public void testMockMVC() throws Exception {[m
+[32m+[m[32m        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();[m
+[32m+[m
+         mockMvc.perform(get("/"))[m
+                 .andExpect(status().isOk())[m
+                 .andExpect(view().name("index"));[m
+     }[m
+ [m
+     @Test[m
+[31m-    public void getIndexPage() {[m
+[32m+[m[32m    public void getIndexPage() throws Exception {[m
+[32m+[m
+         //given[m
+         Set<Recipe> recipes = new HashSet<>();[m
+         recipes.add(new Recipe());[m
+[32m+[m
+         Recipe recipe = new Recipe();[m
+[31m-        recipe.setId(3l);[m
+[32m+[m[32m        recipe.setId(1L);[m
+[32m+[m
+         recipes.add(recipe);[m
+[32m+[m
+         when(recipeService.getRecipes()).thenReturn(recipes);[m
+[32m+[m
+         ArgumentCaptor<Set<Recipe>> argumentCaptor = ArgumentCaptor.forClass(Set.class);[m
+[32m+[m
+         //when[m
+[31m-        String viewName = indexController.getIndexPage(model);[m
+[32m+[m[32m        String viewName = controller.getIndexPage(model);[m
+[32m+[m
+[32m+[m
+         //then[m
+         assertEquals("index", viewName);[m
+         verify(recipeService, times(1)).getRecipes();[m
+[36m@@ -63,4 +76,5 @@[m [mpublic class IndexControllerTest {[m
+         Set<Recipe> setInController = argumentCaptor.getValue();[m
+         assertEquals(2, setInController.size());[m
+     }[m
+[32m+[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/src/test/java/guru/springframework/controllers/RecipeControllerTest.java b/src/test/java/guru/springframework/controllers/RecipeControllerTest.java[m
+[1mindex 96fc350..075a6b2 100644[m
+[1m--- a/src/test/java/guru/springframework/controllers/RecipeControllerTest.java[m
+[1m+++ b/src/test/java/guru/springframework/controllers/RecipeControllerTest.java[m
+[36m@@ -12,32 +12,39 @@[m [mimport org.springframework.test.web.servlet.setup.MockMvcBuilders;[m
+ import static org.mockito.ArgumentMatchers.anyLong;[m
+ import static org.mockito.Mockito.when;[m
+ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;[m
+[31m-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;[m
+[31m-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;[m
+[32m+[m[32mimport static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/19/17.[m
+[32m+[m[32m */[m
+ public class RecipeControllerTest {[m
+[32m+[m
+[32m+[m
+     @Mock[m
+     RecipeService recipeService;[m
+ [m
+[31m-    RecipeController recipeController;[m
+[32m+[m[32m    RecipeController controller;[m
+ [m
+     @Before[m
+     public void setUp() throws Exception {[m
+         MockitoAnnotations.initMocks(this);[m
+ [m
+[31m-        recipeController = new RecipeController(recipeService);[m
+[31m-[m
+[32m+[m[32m        controller = new RecipeController(recipeService);[m
+     }[m
+ [m
+     @Test[m
+     public void testGetRecipe() throws Exception {[m
+[32m+[m
+         Recipe recipe = new Recipe();[m
+         recipe.setId(1L);[m
+ [m
+[31m-        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(recipeController).build();[m
+[32m+[m[32m        MockMvc mockMvc = MockMvcBuilders.standaloneSetup(controller).build();[m
+[32m+[m
+         when(recipeService.findById(anyLong())).thenReturn(recipe);[m
+[32m+[m
+         mockMvc.perform(get("/recipe/show/1"))[m
+                 .andExpect(status().isOk())[m
+[31m-                .andExpect(view().name("recipe/show"));[m
+[32m+[m[32m                .andExpect(view().name("recipe/show"))[m
+[32m+[m[32m                .andExpect(model().attributeExists("recipe"));[m
+     }[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m
+[1mdiff --git a/src/test/java/guru/springframework/domain/CategoryTest.java b/src/test/java/guru/springframework/domain/CategoryTest.java[m
+[1mindex b062bdf..11badc4 100644[m
+[1m--- a/src/test/java/guru/springframework/domain/CategoryTest.java[m
+[1m+++ b/src/test/java/guru/springframework/domain/CategoryTest.java[m
+[36m@@ -3,8 +3,11 @@[m [mpackage guru.springframework.domain;[m
+ import org.junit.Before;[m
+ import org.junit.Test;[m
+ [m
+[31m-import static org.junit.Assert.*;[m
+[32m+[m[32mimport static org.junit.Assert.assertEquals;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/17/17.[m
+[32m+[m[32m */[m
+ public class CategoryTest {[m
+ [m
+     Category category;[m
+[36m@@ -15,17 +18,20 @@[m [mpublic class CategoryTest {[m
+     }[m
+ [m
+     @Test[m
+[31m-    public void getId() {[m
+[31m-        Long idVal = 4l;[m
+[31m-        category.setId(idVal);[m
+[31m-        assertEquals(idVal, category.getId());[m
+[32m+[m[32m    public void getId() throws Exception {[m
+[32m+[m[32m        Long idValue = 4L;[m
+[32m+[m
+[32m+[m[32m        category.setId(idValue);[m
+[32m+[m
+[32m+[m[32m        assertEquals(idValue, category.getId());[m
+     }[m
+ [m
+     @Test[m
+[31m-    public void getDescription() {[m
+[32m+[m[32m    public void getDescription() throws Exception {[m
+     }[m
+ [m
+     @Test[m
+[31m-    public void getRecipes() {[m
+[32m+[m[32m    public void getRecipes() throws Exception {[m
+     }[m
+[32m+[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/src/test/java/guru/springframework/repositories/UnitOfMeasureITTest.java b/src/test/java/guru/springframework/repositories/UnitOfMeasureRepositoryIT.java[m
+[1msimilarity index 54%[m
+[1mrename from src/test/java/guru/springframework/repositories/UnitOfMeasureITTest.java[m
+[1mrename to src/test/java/guru/springframework/repositories/UnitOfMeasureRepositoryIT.java[m
+[1mindex cd1a83a..b934959 100644[m
+[1m--- a/src/test/java/guru/springframework/repositories/UnitOfMeasureITTest.java[m
+[1m+++ b/src/test/java/guru/springframework/repositories/UnitOfMeasureRepositoryIT.java[m
+[36m@@ -10,22 +10,36 @@[m [mimport org.springframework.test.context.junit4.SpringRunner;[m
+ [m
+ import java.util.Optional;[m
+ [m
+[31m-import static org.junit.Assert.*;[m
+[32m+[m[32mimport static org.junit.Assert.assertEquals;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/17/17.[m
+[32m+[m[32m */[m
+ @RunWith(SpringRunner.class)[m
+ @DataJpaTest[m
+[31m-public class UnitOfMeasureITTest {[m
+[32m+[m[32mpublic class UnitOfMeasureRepositoryIT {[m
+[32m+[m
+     @Autowired[m
+     UnitOfMeasureRepository unitOfMeasureRepository;[m
+ [m
+     @Before[m
+     public void setUp() throws Exception {[m
+[31m-        [m
+     }[m
+ [m
+     @Test[m
+     public void findByDescription() throws Exception {[m
+[31m-        Optional<UnitOfMeasure> unitOfMeasureOptional = unitOfMeasureRepository.findByDescription("Teaspoon");[m
+[31m-        assertEquals("Teaspoon", unitOfMeasureOptional.get().getDescription());[m
+[32m+[m
+[32m+[m[32m        Optional<UnitOfMeasure> uomOptional = unitOfMeasureRepository.findByDescription("Teaspoon");[m
+[32m+[m
+[32m+[m[32m        assertEquals("Teaspoon", uomOptional.get().getDescription());[m
+     }[m
+[32m+[m
+[32m+[m[32m    @Test[m
+[32m+[m[32m    public void findByDescriptionCup() throws Exception {[m
+[32m+[m
+[32m+[m[32m        Optional<UnitOfMeasure> uomOptional = unitOfMeasureRepository.findByDescription("Cup");[m
+[32m+[m
+[32m+[m[32m        assertEquals("Cup", uomOptional.get().getDescription());[m
+[32m+[m[32m    }[m
+[32m+[m
+ }[m
+\ No newline at end of file[m
+[1mdiff --git a/src/test/java/guru/springframework/services/RecipeServiceImplTest.java b/src/test/java/guru/springframework/services/RecipeServiceImplTest.java[m
+[1mindex 359de4d..a6c4326 100644[m
+[1m--- a/src/test/java/guru/springframework/services/RecipeServiceImplTest.java[m
+[1m+++ b/src/test/java/guru/springframework/services/RecipeServiceImplTest.java[m
+[36m@@ -1,5 +1,6 @@[m
+ package guru.springframework.services;[m
+ [m
+[32m+[m
+ import guru.springframework.domain.Recipe;[m
+ import guru.springframework.repositories.RecipeRepository;[m
+ import org.junit.Before;[m
+[36m@@ -11,20 +12,28 @@[m [mimport java.util.HashSet;[m
+ import java.util.Optional;[m
+ import java.util.Set;[m
+ [m
+[31m-import static org.junit.Assert.*;[m
+[32m+[m[32mimport static org.junit.Assert.assertEquals;[m
+[32m+[m[32mimport static org.junit.Assert.assertNotNull;[m
+ import static org.mockito.Mockito.*;[m
+ [m
+[32m+[m[32m/**[m
+[32m+[m[32m * Created by jt on 6/17/17.[m
+[32m+[m[32m */[m
+ public class RecipeServiceImplTest {[m
+ [m
+     RecipeServiceImpl recipeService;[m
+[32m+[m
+     @Mock[m
+     RecipeRepository recipeRepository;[m
+ [m
+[32m+[m
+     @Before[m
+     public void setUp() throws Exception {[m
+         MockitoAnnotations.initMocks(this);[m
+[32m+[m
+         recipeService = new RecipeServiceImpl(recipeRepository);[m
+     }[m
+[32m+[m
+     @Test[m
+     public void getRecipeByIdTest() throws Exception {[m
+         Recipe recipe = new Recipe();[m
+[36m@@ -41,14 +50,19 @@[m [mpublic class RecipeServiceImplTest {[m
+     }[m
+ [m
+     @Test[m
+[31m-    public void getRecipes() {[m
+[32m+[m[32m    public void getRecipesTest() throws Exception {[m
+[32m+[m
+         Recipe recipe = new Recipe();[m
+[31m-        HashSet recipeData = new HashSet();[m
+[31m-        recipeData.add(recipe);[m
+[32m+[m[32m        HashSet receipesData = new HashSet();[m
+[32m+[m[32m        receipesData.add(recipe);[m
+[32m+[m
+[32m+[m[32m        when(recipeService.getRecipes()).thenReturn(receipesData);[m
+ [m
+[31m-        when(recipeRepository.findAll()).thenReturn(recipeData);[m
+         Set<Recipe> recipes = recipeService.getRecipes();[m
+[32m+[m
+         assertEquals(recipes.size(), 1);[m
+         verify(recipeRepository, times(1)).findAll();[m
+[32m+[m[32m        verify(recipeRepository, never()).findById(anyLong());[m
+     }[m
+[32m+[m
+ }[m
+\ No newline at end of file[m
